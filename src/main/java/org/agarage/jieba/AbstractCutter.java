@@ -1,6 +1,7 @@
 package org.agarage.jieba;
 
 import javafx.util.Pair;
+import org.agarage.jieba.dictionary.AbstractDictionary;
 
 import java.util.HashMap;
 import java.util.List;
@@ -10,9 +11,9 @@ import java.util.Map;
  * Created by Nicholas on 2016/6/30.
  */
 public abstract class AbstractCutter {
-    protected Dictionary dictionary;
+    protected AbstractDictionary dictionary;
 
-    public AbstractCutter(Dictionary dictionary) {
+    public AbstractCutter(AbstractDictionary dictionary) {
         this.dictionary = dictionary;
     }
 
@@ -27,8 +28,12 @@ public abstract class AbstractCutter {
             }
             StringBuilder frag = new StringBuilder(sentence.substring(k, k + 1));
             int i = k;
-            while (i < sentence.length() && dictionary.hasWord(frag.toString())) {
-                if (dictionary.getFreq(frag.toString()) > 0) {
+//            while (i < sentence.length() && dictionary.hasWord(frag.toString())) {
+            while (i < sentence.length()) {
+                Integer f = dictionary.getFreq(frag.toString(), null);
+                if (f == null) break;
+//                if (dictionary.getFreq(frag.toString()) > 0) {
+                if (f > 0) {
                     tmplist.add(i);
                 }
                 i += 1;
@@ -64,5 +69,14 @@ public abstract class AbstractCutter {
         return  route;
     }
 
-    public abstract List<String> cut(String block);
+    protected void addResult(List<Word> result, String word) {
+        Word info = dictionary.getWord(word);
+        if (info == null) {
+            info = new Word(0);
+        }
+        info.setWord(word);
+        result.add(info);
+    }
+
+    public abstract List<Word> cut(String block);
 }

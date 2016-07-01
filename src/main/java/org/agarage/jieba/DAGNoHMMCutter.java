@@ -1,6 +1,7 @@
 package org.agarage.jieba;
 
 import javafx.util.Pair;
+import org.agarage.jieba.dictionary.AbstractDictionary;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -13,13 +14,13 @@ import java.util.regex.Pattern;
 public class DAGNoHMMCutter extends AbstractCutter {
     private final static Pattern patEng = Pattern.compile("[a-zA-Z0-9]");
 
-    public DAGNoHMMCutter(Dictionary dictionary) {
+    public DAGNoHMMCutter(AbstractDictionary dictionary) {
         super(dictionary);
     }
 
     @Override
-    public List<String> cut(String block) {
-        List<String> result = new LinkedList<>();
+    public List<Word> cut(String block) {
+        List<Word> result = new LinkedList<>();
         DAG dag = getDag(block);
         Map<Integer, Pair<Double, Integer>> route = calc(block, dag);
         int x = 0;
@@ -33,16 +34,15 @@ public class DAGNoHMMCutter extends AbstractCutter {
                 x = y;
             } else {
                 if (buf.length() > 0) {
-                    result.add(buf.toString());
+                    addResult(result, buf.toString());
                     buf = new StringBuilder();
                 }
-                result.add(l_word);
+                addResult(result, l_word);
                 x = y;
             }
         }
         if (buf.length() > 0) {
-            result.add(buf.toString());
-            buf = new StringBuilder();
+            addResult(result, buf.toString());
         }
         return result;
     }

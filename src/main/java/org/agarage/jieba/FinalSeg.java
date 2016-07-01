@@ -1,6 +1,7 @@
 package org.agarage.jieba;
 
 import javafx.util.Pair;
+import org.agarage.jieba.dictionary.AbstractDictionary;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,21 +24,15 @@ public class FinalSeg {
     private static Double MIN_FLOAT = -3.14e100;;
     private final static Pattern patSkip = Pattern.compile("(\\d+\\.\\d+|[a-zA-Z0-9]+)");
 
+    private AbstractDictionary dictionary;
 
-    private FinalSeg() {
+
+    public FinalSeg(AbstractDictionary dictionary) {
+        this.dictionary = dictionary;
+        loadModel();
     }
 
-
-    public synchronized static FinalSeg getInstance() {
-        if (null == singleInstance) {
-            singleInstance = new FinalSeg();
-            singleInstance.loadModel();
-        }
-        return singleInstance;
-    }
-
-
-    private void loadModel() {
+    private synchronized void loadModel() {
         long s = System.currentTimeMillis();
         prevStatus = new HashMap<Character, char[]>();
         prevStatus.put('B', new char[] { 'E', 'S' });
@@ -103,8 +98,8 @@ public class FinalSeg {
     }
 
 
-    public List<String> cut(String sentence) {
-        List<String> result = new LinkedList<String>();
+    public List<Word> cut(String sentence) {
+        List<Word> result = new LinkedList<Word>();
         List<String> blocks = CharacterUtils.split(sentence);
         for (String block : blocks) {
             if (CharacterUtils.isChinese(block)) {
@@ -120,23 +115,29 @@ public class FinalSeg {
                             begin = i;
                             break;
                         case 'E':
-                            result.add(block.substring(begin, i + 1));
+                            addResult(result, block.substring(begin, i + 1));
                             nexti = i + 1;
                             break;
                         case 'S':
-                            result.add(block.substring(i, i + 1));
+                            addResult(result, block.substring(i, i + 1));
                             nexti = i + 1;
                             break;
                     }
                 }
                 if (nexti < block.length()) {
-                    result.add(block.substring(nexti));
+                    addResult(result, block.substring(nexti));
                 }
             } else {
                 List<String> tmp = CharacterUtils.split(block, patSkip);
                 for (String str : tmp) {
                     if (str.length() > 0) {
-                        result.add(str);
+                        if (CharacterUtils.isNumber(str)) {
+                            addResult(result, str, WordFlag.M);
+                        } else if (CharacterUtils.isEnglish(str)) {
+                            addResult(result, str, WordFlag.ENG);
+                        } else {
+                            addResult(result, str);
+                        }
                     }
                 }
             }
@@ -144,6 +145,19 @@ public class FinalSeg {
         return result;
     }
 
+    private void addResult(List<Word> result, String word) {
+        addResult(result, word, WordFlag.X);
+    }
+
+    private void addResult(List<Word> result, String word, WordFlag flag) {
+        Word info = dictionary.getWord(word);
+        if (info == null) {
+            info = new Word(0);
+            info.setFlag(flag);
+        }
+        info.setWord(word);
+        result.add(info);
+    }
 
     public Pair<Double, List<Character>> viterbi(String sentence, String states) {
         List<Map<Character, Double>> vectors = new LinkedList<Map<Character, Double>>();

@@ -1,6 +1,7 @@
 package org.agarage.jieba;
 
 import javafx.util.Pair;
+import org.agarage.jieba.dictionary.AbstractDictionary;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -10,14 +11,21 @@ import java.util.Map;
  * Created by Nicholas on 2016/6/30.
  */
 public class DAGCutter extends AbstractCutter {
-    public DAGCutter(Dictionary dictionary) {
+    private FinalSeg finalSeg;
+
+    public DAGCutter(AbstractDictionary dictionary) {
         super(dictionary);
+        finalSeg = new FinalSeg(dictionary);
+    }
+
+    private FinalSeg getFinalSeg() {
+        return finalSeg;
     }
 
     @Override
-    public List<String> cut(String block) {
+    public List<Word> cut(String block) {
         if (!dictionary.isLoaded()) dictionary.load();
-        List<String> result = new LinkedList<>();
+        List<Word> result = new LinkedList<>();
         DAG dag = getDag(block);
         Map<Integer, Pair<Double, Integer>> route = calc(block, dag);
         int x = 0;
@@ -31,32 +39,32 @@ public class DAGCutter extends AbstractCutter {
             } else {
                 if (buf.length() > 0) {
                     if (buf.length() == 1) {
-                        result.add(buf.toString());
+                        addResult(result, buf.toString());
                         buf = new StringBuilder();
                     } else {
                         if (dictionary.getFreq(buf.toString(), 0) == 0) {
-                            result.addAll(FinalSeg.getInstance().cut(buf.toString()));
+                            result.addAll(getFinalSeg().cut(buf.toString()));
                         } else {
                             for (int i = 0; i < buf.length(); i ++) {
-                                result.add(String.valueOf(buf.charAt(i)));
+                                addResult(result, String.valueOf(buf.charAt(i)));
                             }
                         }
                         buf = new StringBuilder();
                     }
                 }
-                result.add(l_word);
+                addResult(result, l_word);
             }
             x = y;
         }
         try {
             if (buf.length() > 0) {
                 if (buf.length() == 1) {
-                    result.add(buf.toString());
+                    addResult(result, buf.toString());
                 } else if (dictionary.getFreq(buf.toString(), 0) == 0) {
-                    result.addAll(FinalSeg.getInstance().cut(buf.toString()));
+                    result.addAll(getFinalSeg().cut(buf.toString()));
                 } else {
                     for (int i = 0; i < buf.length(); i ++) {
-                        result.add(String.valueOf(buf.charAt(i)));
+                        addResult(result, String.valueOf(buf.charAt(i)));
                     }
                 }
             }

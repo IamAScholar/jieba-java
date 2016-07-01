@@ -1,5 +1,9 @@
 package org.agarage.jieba;
 
+import org.agarage.jieba.dictionary.AbstractDictionary;
+import org.agarage.jieba.dictionary.MapDictionary;
+import org.agarage.jieba.dictionary.TrieDictionary;
+
 import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,12 +19,21 @@ public class Jieba {
     private final static Pattern patHanAll = Pattern.compile("([\u4E00-\u9FD5]+)");
     private final static Pattern patSkipAll = Pattern.compile("[^a-zA-Z0-9+#\n]");
 
-    private Dictionary dictionary;
+    private AbstractDictionary dictionary;
     private DAGCutter dagCutter;
     private DAGNoHMMCutter dagNoHMMCutter;
     private AllCutter allCutter;
 
-    private Jieba(Dictionary dictionary) {
+    private Analyzer analyzer = null;
+
+    public Analyzer getAnalyzer() {
+        if (analyzer == null) {
+            analyzer = new Analyzer(this);
+        }
+        return analyzer;
+    }
+
+    private Jieba(AbstractDictionary dictionary) {
         this.dictionary = dictionary;
         this.dagCutter = new DAGCutter(dictionary);
         this.allCutter = new AllCutter(dictionary);
@@ -28,20 +41,21 @@ public class Jieba {
     }
 
     public static Jieba create() {
-        Dictionary dictionary = new Dictionary();
+//        AbstractDictionary dictionary = new MapDictionary();
+        AbstractDictionary dictionary = new TrieDictionary();
         dictionary.loadDir(Paths.get("dict"));
-        return new Jieba(new Dictionary());
+        return new Jieba(dictionary);
     }
 
-    public List<String> cut(String sentence, boolean hmm) {
+    public List<Word> cut(String sentence, boolean hmm) {
         return cut(sentence, false, hmm);
     }
 
-    public List<String> cut(String sentence) {
+    public List<Word> cut(String sentence) {
         return cut(sentence, false, true);
     }
 
-    public List<String> cut(String sentence, boolean cutAll, boolean hmm) {
+    public List<Word> cut(String sentence, boolean cutAll, boolean hmm) {
         Pattern patHan, patSkip;
         AbstractCutter cutter;
         if (cutAll) {
@@ -57,7 +71,7 @@ public class Jieba {
                 cutter = dagNoHMMCutter;
             }
         }
-        List<String> result = new LinkedList<String>();
+        List<Word> result = new LinkedList<Word>();
         List<String> blocks = CharacterUtils.split(sentence, patHan);
         for (String block : blocks) {
             if (block.length() == 0) {
@@ -69,13 +83,14 @@ public class Jieba {
                 String[] tmp = patSkip.split(block);
                 for (String str : tmp) {
                     if (patSkip.matcher(str).matches()) {
-                        result.add(str);
+                        addNonChineseResult(result, str);
                     } else if (!cutAll) {
                         for (int i = 0; i < str.length(); i ++) {
-                            result.add(str.substring(i, i + 1));
+                            String w = str.substring(i, i + 1);
+                            addNonChineseResult(result, w);
                         }
                     } else {
-                        result.add(str);
+                        addNonChineseResult(result, str);
                     }
                 }
             }
@@ -83,19 +98,44 @@ public class Jieba {
         return result;
     }
 
-    public List<String> cutForSearch(String sentence) {
+    private void addNonChineseResult(List<Word> result, String word) {
+        if (CharacterUtils.isNumber(word)) {
+            addResult(result, word, WordFlag.M);
+        } else if (CharacterUtils.isEnglish(word)) {
+            addResult(result, word, WordFlag.ENG);
+        } else {
+            addResult(result, word);
+        }
+    }
+
+    private void addResult(List<Word> result, String word) {
+        addResult(result, word, WordFlag.X);
+    }
+
+    private void addResult(List<Word> result, String word, WordFlag flag) {
+        Word info = dictionary.getWord(word);
+        if (info == null) {
+            info = new Word(0);
+            info.setFlag(flag);
+        }
+        info.setWord(word);
+        result.add(info);
+    }
+
+    public List<Word> cutForSearch(String sentence) {
         return cutForSearch(sentence, true);
     }
 
-    public List<String> cutForSearch(String sentence, boolean hmm) {
-        List<String> result = new LinkedList<>();
-        List<String> words = cut(sentence, false, hmm);
-        for (String word : words) {
+    public List<Word> cutForSearch(String sentence, boolean hmm) {
+        List<Word> result = new LinkedList<>();
+        List<Word> words = cut(sentence, false, hmm);
+        for (Word wordObj : words) {
+            String word = wordObj.getWord();
             if (word.length() > 2) {
                 for (int i = 0; i < word.length() - 1; i ++) {
                     String gram2 = word.substring(i, i + 2);
                     if (dictionary.getFreq(gram2, 0) > 0) {
-                        result.add(gram2);
+                        addResult(result, gram2);
                     }
                 }
             }
@@ -103,11 +143,11 @@ public class Jieba {
                 for (int i = 0; i < word.length() - 2; i ++) {
                     String gram3 = word.substring(i, i + 3);
                     if (dictionary.getFreq(gram3, 0) > 0) {
-                        result.add(gram3);
+                        addResult(result, gram3);
                     }
                 }
             }
-            result.add(word);
+            addResult(result, word);
         }
         return result;
     }
