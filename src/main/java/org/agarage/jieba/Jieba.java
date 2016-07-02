@@ -1,13 +1,13 @@
 package org.agarage.jieba;
 
+import javafx.util.Pair;
 import org.agarage.jieba.dictionary.AbstractDictionary;
-import org.agarage.jieba.dictionary.MapDictionary;
 import org.agarage.jieba.dictionary.TrieDictionary;
 
 import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Matcher;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -20,9 +20,9 @@ public class Jieba {
     private final static Pattern patSkipAll = Pattern.compile("[^a-zA-Z0-9+#\n]");
 
     private AbstractDictionary dictionary;
-    private DAGCutter dagCutter;
-    private DAGNoHMMCutter dagNoHMMCutter;
-    private AllCutter allCutter;
+    private DAGTokenizer dagCutter;
+    private DAGNoHMMTokenizer dagNoHMMCutter;
+    private AllTokenizer allCutter;
 
     private Analyzer analyzer = null;
 
@@ -35,9 +35,9 @@ public class Jieba {
 
     private Jieba(AbstractDictionary dictionary) {
         this.dictionary = dictionary;
-        this.dagCutter = new DAGCutter(dictionary);
-        this.allCutter = new AllCutter(dictionary);
-        this.dagNoHMMCutter = new DAGNoHMMCutter(dictionary);
+        this.dagCutter = new DAGTokenizer(dictionary);
+        this.allCutter = new AllTokenizer(dictionary);
+        this.dagNoHMMCutter = new DAGNoHMMTokenizer(dictionary);
     }
 
     public static Jieba create() {
@@ -57,7 +57,7 @@ public class Jieba {
 
     public List<Word> cut(String sentence, boolean cutAll, boolean hmm) {
         Pattern patHan, patSkip;
-        AbstractCutter cutter;
+        AbstractTokenizer cutter;
         if (cutAll) {
             patHan = patHanAll;
             patSkip = patSkipAll;
@@ -151,4 +151,5 @@ public class Jieba {
         }
         return result;
     }
+
 }

@@ -9,8 +9,8 @@ import java.util.Map;
 /**
  * Created by Nicholas on 2016/6/30.
  */
-public class AllCutter extends AbstractCutter {
-    public AllCutter(AbstractDictionary dict) {
+public class AllTokenizer extends AbstractTokenizer {
+    public AllTokenizer(AbstractDictionary dict) {
         super(dict);
     }
 

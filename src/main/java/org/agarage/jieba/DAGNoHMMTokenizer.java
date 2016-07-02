@@ -11,10 +11,10 @@ import java.util.regex.Pattern;
 /**
  * Created by Nicholas on 2016/7/1.
  */
-public class DAGNoHMMCutter extends AbstractCutter {
+public class DAGNoHMMTokenizer extends AbstractTokenizer {
     private final static Pattern patEng = Pattern.compile("[a-zA-Z0-9]");
 
-    public DAGNoHMMCutter(AbstractDictionary dictionary) {
+    public DAGNoHMMTokenizer(AbstractDictionary dictionary) {
         super(dictionary);
     }
 

@@ -10,10 +10,10 @@ import java.util.Map;
 /**
  * Created by Nicholas on 2016/6/30.
  */
-public abstract class AbstractCutter {
+public abstract class AbstractTokenizer {
     protected AbstractDictionary dictionary;
 
-    public AbstractCutter(AbstractDictionary dictionary) {
+    public AbstractTokenizer(AbstractDictionary dictionary) {
         this.dictionary = dictionary;
     }
 

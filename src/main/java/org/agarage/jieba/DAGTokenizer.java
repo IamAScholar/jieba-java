@@ -10,10 +10,10 @@ import java.util.Map;
 /**
  * Created by Nicholas on 2016/6/30.
  */
-public class DAGCutter extends AbstractCutter {
+public class DAGTokenizer extends AbstractTokenizer {
     private FinalSeg finalSeg;
 
-    public DAGCutter(AbstractDictionary dictionary) {
+    public DAGTokenizer(AbstractDictionary dictionary) {
         super(dictionary);
         finalSeg = new FinalSeg(dictionary);
     }
